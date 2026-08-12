@@ -1,13 +1,14 @@
 package com.aiimglobal.pilot.booking.system.booking.application;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.assignment.persistence.BookingAssignmentRepository;
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
 import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
@@ -30,9 +31,11 @@ import com.aiimglobal.pilot.booking.system.vessel.domain.VesselStatus;
 import com.aiimglobal.pilot.booking.system.vessel.persistence.VesselRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingService {
 
     private final BookingRepository bookingRepository;
@@ -62,15 +65,19 @@ public class BookingService {
 
         var booking = Booking.request(
                 bookingNumber(), requester, vessel, route, request.serviceDate());
-        return toResponse(bookingRepository.saveAndFlush(booking));
+        BookingResponse response = toResponse(bookingRepository.saveAndFlush(booking));
+        log.info("action=booking_created actor={} bookingId={}", requesterEmail, response.id());
+        return response;
     }
 
     @Transactional(readOnly = true)
-    public List<BookingResponse> list(String requesterEmail) {
+    public PageResponse<BookingResponse> list(
+            String requesterEmail, BookingStatus status, Pageable pageable) {
         Long requesterId = requester(requesterEmail).getId();
-        return bookingRepository.findAllByRequestedByIdOrderById(requesterId).stream()
-                .map(this::toResponse)
-                .toList();
+        var bookings = status == null
+                ? bookingRepository.findAllByRequestedById(requesterId, pageable)
+                : bookingRepository.findAllByRequestedByIdAndStatus(requesterId, status, pageable);
+        return PageResponse.from(bookings.map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -83,24 +90,28 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminBookingResponse> listForReview(BookingStatus status) {
-        return bookingRepository.findAllByStatusOrderById(status).stream()
-                .map(this::toAdminResponse)
-                .toList();
+    public PageResponse<AdminBookingResponse> listForReview(
+            BookingStatus status, Pageable pageable) {
+        return PageResponse.from(bookingRepository.findAllByStatus(status, pageable)
+                .map(this::toAdminResponse));
     }
 
     @Transactional
     public AdminBookingResponse approve(String reviewerEmail, Long bookingId) {
         var booking = bookingForReview(bookingId);
         booking.approve(reviewer(reviewerEmail));
-        return saveReviewed(booking);
+        AdminBookingResponse response = saveReviewed(booking);
+        log.info("action=booking_approved actor={} bookingId={}", reviewerEmail, bookingId);
+        return response;
     }
 
     @Transactional
     public AdminBookingResponse reject(String reviewerEmail, Long bookingId, String reason) {
         var booking = bookingForReview(bookingId);
         booking.reject(reviewer(reviewerEmail), reason);
-        return saveReviewed(booking);
+        AdminBookingResponse response = saveReviewed(booking);
+        log.info("action=booking_rejected actor={} bookingId={}", reviewerEmail, bookingId);
+        return response;
     }
 
     private User requester(String requesterEmail) {

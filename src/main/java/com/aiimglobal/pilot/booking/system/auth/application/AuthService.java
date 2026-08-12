@@ -25,9 +25,11 @@ import com.aiimglobal.pilot.booking.system.user.persistence.RoleRepository;
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -41,8 +43,11 @@ public class AuthService {
         try {
             var authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(email, request.password()));
-            return jwtTokenService.issue(authentication);
+            AuthResponse response = jwtTokenService.issue(authentication);
+            log.info("action=login_succeeded actor={}", email);
+            return response;
         } catch (AuthenticationException exception) {
+            log.warn("action=login_failed actor={}", email);
             throw new InvalidCredentialsException();
         }
     }
@@ -65,7 +70,7 @@ public class AuthService {
                     .orElseThrow(() -> new MissingReferenceDataException("OWNER role is not configured."));
             saved.grant(ownerRole);
             userRepository.flush();
-            return new RegisterOwnerResponse(
+            RegisterOwnerResponse response = new RegisterOwnerResponse(
                     saved.getId(),
                     saved.getEmail(),
                     saved.getPhone(),
@@ -73,6 +78,8 @@ public class AuthService {
                     saved.getStatus(),
                     List.of(RoleName.OWNER),
                     saved.getCreatedAt());
+            log.info("action=owner_registered actor={} userId={}", email, saved.getId());
+            return response;
         } catch (DataIntegrityViolationException exception) {
             throw new ResourceConflictException(
                     "REGISTRATION_CONFLICT", "The email or phone is already registered.");

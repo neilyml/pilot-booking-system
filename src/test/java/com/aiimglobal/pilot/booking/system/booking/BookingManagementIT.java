@@ -209,11 +209,11 @@ class BookingManagementIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(ownerAFirst.intValue())
-                .jsonPath("$[0].requestedById").isEqualTo(ownerA.id().intValue())
-                .jsonPath("$[1].id").isEqualTo(ownerASecond.intValue())
-                .jsonPath("$[1].requestedById").isEqualTo(ownerA.id().intValue())
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(ownerASecond.intValue())
+                .jsonPath("$.content[0].requestedById").isEqualTo(ownerA.id().intValue())
+                .jsonPath("$.content[1].id").isEqualTo(ownerAFirst.intValue())
+                .jsonPath("$.content[1].requestedById").isEqualTo(ownerA.id().intValue())
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     @Test

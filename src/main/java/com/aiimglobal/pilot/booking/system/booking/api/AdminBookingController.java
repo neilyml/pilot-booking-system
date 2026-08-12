@@ -1,7 +1,6 @@
 package com.aiimglobal.pilot.booking.system.booking.api;
 
 import java.net.URI;
-import java.util.List;
 
 import jakarta.validation.Valid;
 
@@ -16,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.aiimglobal.pilot.booking.system.api.PageRequests;
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.assignment.application.AssignmentService;
 import com.aiimglobal.pilot.booking.system.assignment.dto.AssignPilotRequest;
 import com.aiimglobal.pilot.booking.system.assignment.dto.AssignmentResponse;
@@ -35,9 +36,11 @@ public class AdminBookingController {
     private final AssignmentService assignmentService;
 
     @GetMapping
-    List<AdminBookingResponse> list(
-            @RequestParam(defaultValue = "PENDING_APPROVAL") BookingStatus status) {
-        return bookingService.listForReview(status);
+    PageResponse<AdminBookingResponse> list(
+            @RequestParam(defaultValue = "PENDING_APPROVAL") BookingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return bookingService.listForReview(status, PageRequests.newestFirst(page, size));
     }
 
     @PostMapping("/{id}/approve")
@@ -65,7 +68,7 @@ public class AdminBookingController {
     }
 
     @PostMapping("/{id}/complete")
-    AssignmentResponse complete(@PathVariable Long id) {
-        return assignmentService.complete(id);
+    AssignmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return assignmentService.complete(jwt.getSubject(), id);
     }
 }

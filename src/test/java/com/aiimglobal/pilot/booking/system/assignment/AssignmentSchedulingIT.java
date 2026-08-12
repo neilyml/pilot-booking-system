@@ -55,8 +55,8 @@ class AssignmentSchedulingIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(freePilot.intValue())
-                .jsonPath("$[1]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(freePilot.intValue())
+                .jsonPath("$.content[1]").doesNotExist();
 
         restTestClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -67,9 +67,9 @@ class AssignmentSchedulingIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(freePilot.intValue())
-                .jsonPath("$[1].id").isEqualTo(busyPilot.intValue())
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(busyPilot.intValue())
+                .jsonPath("$.content[1].id").isEqualTo(freePilot.intValue())
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     @Test

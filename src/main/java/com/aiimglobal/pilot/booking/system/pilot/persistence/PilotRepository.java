@@ -1,10 +1,11 @@
 package com.aiimglobal.pilot.booking.system.pilot.persistence;
 
-import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -20,7 +21,7 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
 
     boolean existsByEmployeeNumberAndIdNot(String employeeNumber, Long id);
 
-    List<Pilot> findAllByOrderById();
+    Page<Pilot> findAllByStatus(PilotStatus status, Pageable pageable);
 
     long countByStatus(PilotStatus status);
 
@@ -37,10 +38,10 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
                     and assignment.serviceDate = :serviceDate
                     and assignment.status = :assignmentStatus
               )
-            order by pilot.id
             """)
-    List<Pilot> findAvailable(
+    Page<Pilot> findAvailable(
             @Param("serviceDate") java.time.LocalDate serviceDate,
             @Param("pilotStatus") PilotStatus pilotStatus,
-            @Param("assignmentStatus") AssignmentStatus assignmentStatus);
+            @Param("assignmentStatus") AssignmentStatus assignmentStatus,
+            Pageable pageable);
 }

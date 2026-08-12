@@ -20,9 +20,11 @@ import com.aiimglobal.pilot.booking.system.pilot.persistence.PilotRepository;
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AssignmentService {
 
     private final BookingAssignmentRepository assignmentRepository;
@@ -65,7 +67,10 @@ public class AssignmentService {
                     BookingAssignment.assign(booking, pilot, administrator));
             booking.markAssigned();
             bookingRepository.saveAndFlush(booking);
-            return toResponse(assignment);
+            AssignmentResponse response = toResponse(assignment);
+            log.info("action=pilot_assigned actor={} bookingId={} pilotId={} assignmentId={}",
+                    administratorEmail, bookingId, pilot.getId(), response.id());
+            return response;
         } catch (DataIntegrityViolationException exception) {
             throw new ResourceConflictException(
                     "ASSIGNMENT_CONFLICT", "The booking or pilot was assigned concurrently.");
@@ -73,7 +78,7 @@ public class AssignmentService {
     }
 
     @Transactional
-    public AssignmentResponse complete(Long bookingId) {
+    public AssignmentResponse complete(String administratorEmail, Long bookingId) {
         var booking = bookingRepository.findForUpdateById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "BOOKING_NOT_FOUND", "Booking was not found."));
@@ -92,7 +97,10 @@ public class AssignmentService {
         try {
             bookingRepository.saveAndFlush(booking);
             assignmentRepository.saveAndFlush(assignment);
-            return toResponse(assignment);
+            AssignmentResponse response = toResponse(assignment);
+            log.info("action=booking_completed actor={} bookingId={} assignmentId={}",
+                    administratorEmail, bookingId, response.id());
+            return response;
         } catch (DataIntegrityViolationException exception) {
             throw new ResourceConflictException(
                     "COMPLETION_CONFLICT", "The booking could not be completed atomically.");

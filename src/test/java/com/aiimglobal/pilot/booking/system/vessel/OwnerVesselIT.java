@@ -127,9 +127,9 @@ class OwnerVesselIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].registrationNumber").isEqualTo("IMO-A-1")
-                .jsonPath("$[1].registrationNumber").isEqualTo("IMO-A-2")
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].registrationNumber").isEqualTo("IMO-A-2")
+                .jsonPath("$.content[1].registrationNumber").isEqualTo("IMO-A-1")
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     @Test

@@ -47,13 +47,13 @@ class AdminVesselReviewIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(firstId.intValue())
-                .jsonPath("$[0].ownerEmail").isEqualTo("owner-a@example.com")
-                .jsonPath("$[0].status").isEqualTo("PENDING")
-                .jsonPath("$[1].id").isEqualTo(secondId.intValue())
-                .jsonPath("$[1].ownerEmail").isEqualTo("owner-b@example.com")
-                .jsonPath("$[1].status").isEqualTo("PENDING")
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(secondId.intValue())
+                .jsonPath("$.content[0].ownerEmail").isEqualTo("owner-b@example.com")
+                .jsonPath("$.content[0].status").isEqualTo("PENDING")
+                .jsonPath("$.content[1].id").isEqualTo(firstId.intValue())
+                .jsonPath("$.content[1].ownerEmail").isEqualTo("owner-a@example.com")
+                .jsonPath("$.content[1].status").isEqualTo("PENDING")
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     @Test

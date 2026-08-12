@@ -163,11 +163,11 @@ class CouponManagementIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].code").isEqualTo(ownerACode)
-                .jsonPath("$[0].ownerId").isEqualTo(ownerA.id().intValue())
-                .jsonPath("$[1].code").isEqualTo(secondOwnerACode)
-                .jsonPath("$[1].ownerId").isEqualTo(ownerA.id().intValue())
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].code").isEqualTo(secondOwnerACode)
+                .jsonPath("$.content[0].ownerId").isEqualTo(ownerA.id().intValue())
+                .jsonPath("$.content[1].code").isEqualTo(ownerACode)
+                .jsonPath("$.content[1].ownerId").isEqualTo(ownerA.id().intValue())
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     private String createAndLoginAdmin() throws Exception {

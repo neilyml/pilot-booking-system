@@ -164,10 +164,10 @@ class RouteManagementIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(activeId.intValue())
-                .jsonPath("$[0].code").isEqualTo("RT-ACTIVE")
-                .jsonPath("$[0].active").isEqualTo(true)
-                .jsonPath("$[1]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(activeId.intValue())
+                .jsonPath("$.content[0].code").isEqualTo("RT-ACTIVE")
+                .jsonPath("$.content[0].active").isEqualTo(true)
+                .jsonPath("$.content[1]").doesNotExist();
     }
 
     @Test

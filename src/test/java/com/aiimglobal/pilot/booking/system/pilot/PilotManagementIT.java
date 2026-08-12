@@ -70,9 +70,9 @@ class PilotManagementIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].employeeNumber").isEqualTo("MP-2001")
-                .jsonPath("$[1].employeeNumber").isEqualTo("MP-2002")
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].employeeNumber").isEqualTo("MP-2002")
+                .jsonPath("$.content[1].employeeNumber").isEqualTo("MP-2001")
+                .jsonPath("$.content[2]").doesNotExist();
     }
 
     @Test

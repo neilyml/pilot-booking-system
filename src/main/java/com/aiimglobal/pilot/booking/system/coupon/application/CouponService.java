@@ -1,13 +1,15 @@
 package com.aiimglobal.pilot.booking.system.coupon.application;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.coupon.domain.Coupon;
+import com.aiimglobal.pilot.booking.system.coupon.domain.CouponStatus;
 import com.aiimglobal.pilot.booking.system.coupon.dto.CouponResponse;
 import com.aiimglobal.pilot.booking.system.coupon.dto.IssueCouponRequest;
 import com.aiimglobal.pilot.booking.system.coupon.persistence.CouponRepository;
@@ -17,9 +19,11 @@ import com.aiimglobal.pilot.booking.system.user.domain.RoleName;
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CouponService {
 
     private static final String CODE_PREFIX = "CPN-";
@@ -42,14 +46,19 @@ public class CouponService {
                 .orElseThrow(() -> new IllegalStateException("Authenticated issuer does not exist."));
         var coupon = Coupon.issue(
                 generateCode(), owner, request.amount(), request.expiresAt(), issuer);
-        return toResponse(couponRepository.saveAndFlush(coupon));
+        CouponResponse response = toResponse(couponRepository.saveAndFlush(coupon));
+        log.info("action=coupon_issued actor={} couponId={} ownerId={}",
+                issuerEmail, response.id(), response.ownerId());
+        return response;
     }
 
     @Transactional(readOnly = true)
-    public List<CouponResponse> listForOwner(String ownerEmail) {
-        return couponRepository.findAllByOwnerEmailOrderById(ownerEmail).stream()
-                .map(CouponService::toResponse)
-                .toList();
+    public PageResponse<CouponResponse> listForOwner(
+            String ownerEmail, CouponStatus status, Pageable pageable) {
+        var coupons = status == null
+                ? couponRepository.findAllByOwnerEmail(ownerEmail, pageable)
+                : couponRepository.findAllByOwnerEmailAndStatus(ownerEmail, status, pageable);
+        return PageResponse.from(coupons.map(CouponService::toResponse));
     }
 
     private static String generateCode() {

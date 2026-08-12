@@ -1,11 +1,11 @@
 package com.aiimglobal.pilot.booking.system.route.application;
 
-import java.util.List;
-
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.exception.ResourceNotFoundException;
 import com.aiimglobal.pilot.booking.system.route.domain.Route;
@@ -15,9 +15,11 @@ import com.aiimglobal.pilot.booking.system.route.persistence.RouteRepository;
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RouteService {
 
     private final RouteRepository routeRepository;
@@ -37,11 +39,13 @@ public class RouteService {
                 request.destination(),
                 request.serviceFee(),
                 creator);
-        return save(route);
+        RouteResponse response = save(route);
+        log.info("action=route_created actor={} routeId={}", creatorEmail, response.id());
+        return response;
     }
 
     @Transactional
-    public RouteResponse update(Long routeId, RouteRequest request) {
+    public RouteResponse update(String administratorEmail, Long routeId, RouteRequest request) {
         if (routeRepository.existsByCodeAndIdNot(request.code(), routeId)) {
             throw codeConflict();
         }
@@ -52,28 +56,33 @@ public class RouteService {
                 request.origin(),
                 request.destination(),
                 request.serviceFee());
-        return save(route);
+        RouteResponse response = save(route);
+        log.info("action=route_updated actor={} routeId={}", administratorEmail, routeId);
+        return response;
     }
 
     @Transactional
-    public RouteResponse activate(Long routeId) {
+    public RouteResponse activate(String administratorEmail, Long routeId) {
         var route = route(routeId);
         route.activate();
-        return toResponse(routeRepository.saveAndFlush(route));
+        RouteResponse response = toResponse(routeRepository.saveAndFlush(route));
+        log.info("action=route_activated actor={} routeId={}", administratorEmail, routeId);
+        return response;
     }
 
     @Transactional
-    public RouteResponse deactivate(Long routeId) {
+    public RouteResponse deactivate(String administratorEmail, Long routeId) {
         var route = route(routeId);
         route.deactivate();
-        return toResponse(routeRepository.saveAndFlush(route));
+        RouteResponse response = toResponse(routeRepository.saveAndFlush(route));
+        log.info("action=route_deactivated actor={} routeId={}", administratorEmail, routeId);
+        return response;
     }
 
     @Transactional(readOnly = true)
-    public List<RouteResponse> listActive() {
-        return routeRepository.findAllByActiveTrueOrderById().stream()
-                .map(RouteService::toResponse)
-                .toList();
+    public PageResponse<RouteResponse> listActive(Pageable pageable) {
+        return PageResponse.from(routeRepository.findAllByActiveTrue(pageable)
+                .map(RouteService::toResponse));
     }
 
     @Transactional(readOnly = true)

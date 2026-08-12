@@ -1,6 +1,8 @@
 package com.aiimglobal.pilot.booking.system.vessel.api;
 
 import com.aiimglobal.pilot.booking.system.vessel.application.VesselService;
+import com.aiimglobal.pilot.booking.system.api.PageRequests;
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.vessel.domain.VesselStatus;
 import com.aiimglobal.pilot.booking.system.vessel.dto.AdminVesselResponse;
 import com.aiimglobal.pilot.booking.system.vessel.dto.RejectVesselRequest;
@@ -16,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/admin/vessels")
 @RequiredArgsConstructor
@@ -26,9 +26,11 @@ public class AdminVesselController {
     private final VesselService vesselService;
 
     @GetMapping
-    List<AdminVesselResponse> list(
-            @RequestParam(defaultValue = "PENDING") VesselStatus status) {
-        return vesselService.listForReview(status);
+    PageResponse<AdminVesselResponse> list(
+            @RequestParam(defaultValue = "PENDING") VesselStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return vesselService.listForReview(status, PageRequests.newestFirst(page, size));
     }
 
     @PostMapping("/{id}/approve")

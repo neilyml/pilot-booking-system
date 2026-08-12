@@ -2,11 +2,12 @@ package com.aiimglobal.pilot.booking.system.coupon.persistence;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +18,10 @@ import com.aiimglobal.pilot.booking.system.coupon.domain.CouponStatus;
 
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
-    List<Coupon> findAllByOwnerEmailOrderById(String ownerEmail);
+    Page<Coupon> findAllByOwnerEmail(String ownerEmail, Pageable pageable);
+
+    Page<Coupon> findAllByOwnerEmailAndStatus(
+            String ownerEmail, CouponStatus status, Pageable pageable);
 
     long countByOwnerEmailAndStatus(String ownerEmail, CouponStatus status);
 

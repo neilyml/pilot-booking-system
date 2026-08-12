@@ -1,12 +1,12 @@
 package com.aiimglobal.pilot.booking.system.vessel.application;
 
-import java.util.List;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.exception.ResourceNotFoundException;
 import com.aiimglobal.pilot.booking.system.user.domain.User;
@@ -19,9 +19,11 @@ import com.aiimglobal.pilot.booking.system.vessel.dto.VesselResponse;
 import com.aiimglobal.pilot.booking.system.vessel.persistence.VesselRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VesselService {
 
     private final VesselRepository vesselRepository;
@@ -40,18 +42,23 @@ public class VesselService {
                     request.name(),
                     request.registrationNumber(),
                     request.vesselType());
-            return toResponse(vesselRepository.saveAndFlush(vessel));
+            VesselResponse response = toResponse(vesselRepository.saveAndFlush(vessel));
+            log.info("action=vessel_registered actor={} vesselId={}",
+                    authenticatedEmail, response.id());
+            return response;
         } catch (DataIntegrityViolationException exception) {
             throw registrationConflict();
         }
     }
 
     @Transactional(readOnly = true)
-    public List<VesselResponse> list(String authenticatedEmail) {
+    public PageResponse<VesselResponse> list(
+            String authenticatedEmail, VesselStatus status, Pageable pageable) {
         Long ownerId = ownerId(authenticatedEmail);
-        return vesselRepository.findAllByOwnerIdOrderById(ownerId).stream()
-                .map(VesselService::toResponse)
-                .toList();
+        var vessels = status == null
+                ? vesselRepository.findAllByOwnerId(ownerId, pageable)
+                : vesselRepository.findAllByOwnerIdAndStatus(ownerId, status, pageable);
+        return PageResponse.from(vessels.map(VesselService::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -63,10 +70,10 @@ public class VesselService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminVesselResponse> listForReview(VesselStatus status) {
-        return vesselRepository.findAllByStatusOrderById(status).stream()
-                .map(VesselService::toAdminResponse)
-                .toList();
+    public PageResponse<AdminVesselResponse> listForReview(
+            VesselStatus status, Pageable pageable) {
+        return PageResponse.from(vesselRepository.findAllByStatus(status, pageable)
+                .map(VesselService::toAdminResponse));
     }
 
     @Transactional
@@ -74,7 +81,9 @@ public class VesselService {
         var reviewer = reviewer(reviewerEmail);
         var vessel = vesselForReview(vesselId);
         vessel.approve(reviewer);
-        return saveReviewed(vessel);
+        AdminVesselResponse response = saveReviewed(vessel);
+        log.info("action=vessel_approved actor={} vesselId={}", reviewerEmail, vesselId);
+        return response;
     }
 
     @Transactional
@@ -82,7 +91,9 @@ public class VesselService {
         var reviewer = reviewer(reviewerEmail);
         var vessel = vesselForReview(vesselId);
         vessel.reject(reviewer, reason);
-        return saveReviewed(vessel);
+        AdminVesselResponse response = saveReviewed(vessel);
+        log.info("action=vessel_rejected actor={} vesselId={}", reviewerEmail, vesselId);
+        return response;
     }
 
     private Long ownerId(String authenticatedEmail) {

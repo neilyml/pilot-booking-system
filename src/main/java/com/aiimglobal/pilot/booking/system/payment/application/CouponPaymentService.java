@@ -22,9 +22,11 @@ import com.aiimglobal.pilot.booking.system.payment.persistence.PaymentRepository
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CouponPaymentService {
 
     private final BookingRepository bookingRepository;
@@ -67,7 +69,10 @@ public class CouponPaymentService {
         booking.markPaid();
         couponRepository.save(coupon);
         bookingRepository.saveAndFlush(booking);
-        return toResponse(payment, redemption);
+        CouponPaymentResponse response = toResponse(payment, redemption);
+        log.info("action=coupon_redeemed actor={} bookingId={} paymentId={} couponId={}",
+                payerEmail, bookingId, response.id(), response.couponId());
+        return response;
     }
 
     private static String transactionReference() {

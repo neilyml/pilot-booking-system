@@ -1,10 +1,11 @@
 package com.aiimglobal.pilot.booking.system.booking.persistence;
 
-import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -15,11 +16,14 @@ import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findAllByRequestedByIdOrderById(Long requestedById);
+    Page<Booking> findAllByRequestedById(Long requestedById, Pageable pageable);
+
+    Page<Booking> findAllByRequestedByIdAndStatus(
+            Long requestedById, BookingStatus status, Pageable pageable);
 
     Optional<Booking> findByIdAndRequestedById(Long id, Long requestedById);
 
-    List<Booking> findAllByStatusOrderById(BookingStatus status);
+    Page<Booking> findAllByStatus(BookingStatus status, Pageable pageable);
 
     long countByRequestedByEmailAndStatus(String requestedByEmail, BookingStatus status);
 

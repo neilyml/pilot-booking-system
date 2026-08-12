@@ -36,17 +36,20 @@ public class AdminRouteController {
     }
 
     @PutMapping("/{id}")
-    RouteResponse update(@PathVariable Long id, @Valid @RequestBody RouteRequest request) {
-        return routeService.update(id, request);
+    RouteResponse update(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @Valid @RequestBody RouteRequest request) {
+        return routeService.update(jwt.getSubject(), id, request);
     }
 
     @PostMapping("/{id}/activate")
-    RouteResponse activate(@PathVariable Long id) {
-        return routeService.activate(id);
+    RouteResponse activate(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return routeService.activate(jwt.getSubject(), id);
     }
 
     @PostMapping("/{id}/deactivate")
-    RouteResponse deactivate(@PathVariable Long id) {
-        return routeService.deactivate(id);
+    RouteResponse deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return routeService.deactivate(jwt.getSubject(), id);
     }
 }

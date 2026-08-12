@@ -1,12 +1,12 @@
 package com.aiimglobal.pilot.booking.system.pilot.application;
 
-import java.util.List;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.assignment.domain.AssignmentStatus;
 import com.aiimglobal.pilot.booking.system.assignment.persistence.BookingAssignmentRepository;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
@@ -19,40 +19,46 @@ import com.aiimglobal.pilot.booking.system.pilot.dto.UpdatePilotRequest;
 import com.aiimglobal.pilot.booking.system.pilot.persistence.PilotRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PilotService {
 
     private final PilotRepository pilotRepository;
     private final BookingAssignmentRepository assignmentRepository;
 
     @Transactional(readOnly = true)
-    public List<PilotResponse> list() {
-        return pilotRepository.findAllByOrderById().stream()
-                .map(PilotService::toResponse)
-                .toList();
+    public PageResponse<PilotResponse> list(PilotStatus status, Pageable pageable) {
+        var pilots = status == null
+                ? pilotRepository.findAll(pageable)
+                : pilotRepository.findAllByStatus(status, pageable);
+        return PageResponse.from(pilots.map(PilotService::toResponse));
     }
 
     @Transactional(readOnly = true)
-    public List<PilotResponse> available(java.time.LocalDate serviceDate) {
-        return pilotRepository.findAvailable(
-                        serviceDate, PilotStatus.ACTIVE, AssignmentStatus.ACTIVE).stream()
-                .map(PilotService::toResponse)
-                .toList();
+    public PageResponse<PilotResponse> available(
+            java.time.LocalDate serviceDate, Pageable pageable) {
+        return PageResponse.from(pilotRepository.findAvailable(
+                        serviceDate, PilotStatus.ACTIVE, AssignmentStatus.ACTIVE, pageable)
+                .map(PilotService::toResponse));
     }
 
     @Transactional
-    public PilotResponse create(CreatePilotRequest request) {
+    public PilotResponse create(String administratorEmail, CreatePilotRequest request) {
         if (pilotRepository.existsByEmployeeNumber(request.employeeNumber())) {
             throw employeeNumberConflict();
         }
-        return save(Pilot.create(
+        PilotResponse response = save(Pilot.create(
                 request.employeeNumber(), request.name(), request.phone(), request.email()));
+        log.info("action=pilot_created actor={} pilotId={}", administratorEmail, response.id());
+        return response;
     }
 
     @Transactional
-    public PilotResponse update(Long pilotId, UpdatePilotRequest request) {
+    public PilotResponse update(
+            String administratorEmail, Long pilotId, UpdatePilotRequest request) {
         if (pilotRepository.existsByEmployeeNumberAndIdNot(request.employeeNumber(), pilotId)) {
             throw employeeNumberConflict();
         }
@@ -64,7 +70,9 @@ public class PilotService {
         pilot.updateProfile(
                 request.employeeNumber(), request.name(), request.phone(), request.email());
         try {
-            return save(pilot);
+            PilotResponse response = save(pilot);
+            log.info("action=pilot_updated actor={} pilotId={}", administratorEmail, pilotId);
+            return response;
         } catch (OptimisticLockingFailureException exception) {
             throw new ResourceConflictException(
                     "PILOT_STALE_VERSION", "The pilot profile was updated by another request.");
@@ -72,7 +80,7 @@ public class PilotService {
     }
 
     @Transactional
-    public PilotResponse deactivate(Long pilotId) {
+    public PilotResponse deactivate(String administratorEmail, Long pilotId) {
         Pilot pilot = pilotRepository.findForUpdateById(pilotId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PILOT_NOT_FOUND", "Pilot was not found."));
@@ -81,7 +89,9 @@ public class PilotService {
                     "PILOT_HAS_ACTIVE_ASSIGNMENT", "A pilot with active work cannot be deactivated.");
         }
         pilot.deactivate();
-        return toResponse(pilotRepository.saveAndFlush(pilot));
+        PilotResponse response = toResponse(pilotRepository.saveAndFlush(pilot));
+        log.info("action=pilot_deactivated actor={} pilotId={}", administratorEmail, pilotId);
+        return response;
     }
 
     private Pilot pilot(Long pilotId) {

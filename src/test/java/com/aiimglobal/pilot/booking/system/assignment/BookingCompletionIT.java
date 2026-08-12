@@ -62,8 +62,8 @@ class BookingCompletionIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(scenario.pilotId().intValue())
-                .jsonPath("$[1]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(scenario.pilotId().intValue())
+                .jsonPath("$.content[1]").doesNotExist();
     }
 
     @Test

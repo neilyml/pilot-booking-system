@@ -1,7 +1,6 @@
 package com.aiimglobal.pilot.booking.system.booking.api;
 
 import java.net.URI;
-import java.util.List;
 
 import jakarta.validation.Valid;
 
@@ -13,9 +12,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.aiimglobal.pilot.booking.system.api.PageRequests;
+import com.aiimglobal.pilot.booking.system.api.PageResponse;
 import com.aiimglobal.pilot.booking.system.booking.application.BookingService;
+import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse;
 import com.aiimglobal.pilot.booking.system.booking.dto.CreateBookingRequest;
 
@@ -37,8 +40,13 @@ public class BookingController {
     }
 
     @GetMapping
-    List<BookingResponse> list(@AuthenticationPrincipal Jwt jwt) {
-        return bookingService.list(jwt.getSubject());
+    PageResponse<BookingResponse> list(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return bookingService.list(
+                jwt.getSubject(), status, PageRequests.newestFirst(page, size));
     }
 
     @GetMapping("/{id}")

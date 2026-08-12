@@ -48,13 +48,13 @@ class AdminBookingReviewIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo(first.bookingId().intValue())
-                .jsonPath("$[0].requestedByEmail").isEqualTo("owner-a@example.com")
-                .jsonPath("$[0].status").isEqualTo("PENDING_APPROVAL")
-                .jsonPath("$[0].payment.status").isEqualTo("SUCCESS")
-                .jsonPath("$[1].id").isEqualTo(second.bookingId().intValue())
-                .jsonPath("$[1].requestedByEmail").isEqualTo("owner-b@example.com")
-                .jsonPath("$[2]").doesNotExist();
+                .jsonPath("$.content[0].id").isEqualTo(second.bookingId().intValue())
+                .jsonPath("$.content[0].requestedByEmail").isEqualTo("owner-b@example.com")
+                .jsonPath("$.content[0].status").isEqualTo("PENDING_APPROVAL")
+                .jsonPath("$.content[0].payment.status").isEqualTo("SUCCESS")
+                .jsonPath("$.content[1].id").isEqualTo(first.bookingId().intValue())
+                .jsonPath("$.content[1].requestedByEmail").isEqualTo("owner-a@example.com")
+                .jsonPath("$.content[2]").doesNotExist();
 
         assertThat(bookingRow(unpaid.bookingId()).get("status")).isEqualTo("PENDING_PAYMENT");
     }

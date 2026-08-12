@@ -10,11 +10,16 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,6 +34,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException exception, HttpServletRequest request) {
         return response(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "The request body is malformed.", request, List.of());
+    }
+
+    @ExceptionHandler({
+            InvalidRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class
+    })
+    ResponseEntity<ApiError> handleInvalidRequestParameter(
+            Exception exception, HttpServletRequest request) {
+        log.warn("action=request_rejected method={} path={} reason=invalid_parameter",
+                request.getMethod(), request.getRequestURI());
+        String message = exception instanceof InvalidRequestParameterException
+                ? exception.getMessage()
+                : "A request parameter is missing or invalid.";
+        return response(HttpStatus.BAD_REQUEST, "INVALID_REQUEST_PARAMETER", message, request, List.of());
     }
 
     @ExceptionHandler(ResourceConflictException.class)
@@ -61,6 +81,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> handleUnexpected(Exception exception, HttpServletRequest request) {
+        log.error("action=request_failed method={} path={} exceptionType={}",
+                request.getMethod(), request.getRequestURI(), exception.getClass().getSimpleName());
         return internalError(request);
     }
 
