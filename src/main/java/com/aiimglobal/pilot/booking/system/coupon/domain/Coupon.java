@@ -82,6 +82,11 @@ public class Coupon {
         return new Coupon(code, owner, amount, expiresAt, issuedBy);
     }
 
+    public void markUsed(Instant usedAt) {
+        status = CouponStatus.USED;
+        this.usedAt = usedAt;
+    }
+
     @PrePersist
     void onCreate() {
         createdAt = Instant.now();

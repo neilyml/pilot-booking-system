@@ -9,12 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse;
+import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.PaymentSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.RouteSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.VesselSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.CreateBookingRequest;
 import com.aiimglobal.pilot.booking.system.booking.persistence.BookingRepository;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.exception.ResourceNotFoundException;
+import com.aiimglobal.pilot.booking.system.payment.domain.PaymentStatus;
+import com.aiimglobal.pilot.booking.system.payment.persistence.PaymentRepository;
 import com.aiimglobal.pilot.booking.system.route.persistence.RouteRepository;
 import com.aiimglobal.pilot.booking.system.user.domain.User;
 import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
@@ -31,6 +34,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final VesselRepository vesselRepository;
     private final RouteRepository routeRepository;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public BookingResponse create(String requesterEmail, CreateBookingRequest request) {
@@ -59,7 +63,7 @@ public class BookingService {
     public List<BookingResponse> list(String requesterEmail) {
         Long requesterId = requester(requesterEmail).getId();
         return bookingRepository.findAllByRequestedByIdOrderById(requesterId).stream()
-                .map(BookingService::toResponse)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -67,7 +71,7 @@ public class BookingService {
     public BookingResponse get(String requesterEmail, Long bookingId) {
         Long requesterId = requester(requesterEmail).getId();
         return bookingRepository.findByIdAndRequestedById(bookingId, requesterId)
-                .map(BookingService::toResponse)
+                .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "BOOKING_NOT_FOUND", "Booking was not found."));
     }
@@ -81,9 +85,11 @@ public class BookingService {
         return "BKG-" + UUID.randomUUID().toString().toUpperCase(Locale.ROOT);
     }
 
-    private static BookingResponse toResponse(Booking booking) {
+    private BookingResponse toResponse(Booking booking) {
         var vessel = booking.getVessel();
         var route = booking.getRoute();
+        var payment = paymentRepository.findByBookingIdAndStatus(
+                booking.getId(), PaymentStatus.SUCCESS);
         return new BookingResponse(
                 booking.getId(),
                 booking.getBookingNumber(),
@@ -103,7 +109,12 @@ public class BookingService {
                         route.getName(),
                         route.getOrigin(),
                         route.getDestination()),
-                null,
+                payment.map(value -> new PaymentSummary(
+                                value.getId(),
+                                value.getStatus().name(),
+                                value.getAmount(),
+                                value.getPaidAt()))
+                        .orElse(null),
                 null,
                 booking.getCreatedAt(),
                 booking.getUpdatedAt(),

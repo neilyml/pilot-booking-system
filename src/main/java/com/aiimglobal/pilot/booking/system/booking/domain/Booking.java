@@ -19,6 +19,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.route.domain.Route;
 import com.aiimglobal.pilot.booking.system.user.domain.User;
 import com.aiimglobal.pilot.booking.system.vessel.domain.Vessel;
@@ -107,6 +108,14 @@ public class Booking {
             Route route,
             LocalDate serviceDate) {
         return new Booking(bookingNumber, requestedBy, vessel, route, serviceDate);
+    }
+
+    public void markPaid() {
+        if (status != BookingStatus.PENDING_PAYMENT) {
+            throw new ResourceConflictException(
+                    "BOOKING_NOT_PENDING_PAYMENT", "The booking is not awaiting payment.");
+        }
+        status = BookingStatus.PENDING_APPROVAL;
     }
 
     @PrePersist
