@@ -36,6 +36,11 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.CONFLICT, exception.getCode(), exception.getMessage(), request, List.of());
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException exception, HttpServletRequest request) {
+        return response(HttpStatus.NOT_FOUND, exception.getCode(), exception.getMessage(), request, List.of());
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     ResponseEntity<ApiError> handleInvalidCredentials(
             InvalidCredentialsException exception, HttpServletRequest request) {
