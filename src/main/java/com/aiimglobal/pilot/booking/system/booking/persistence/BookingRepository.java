@@ -11,12 +11,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
+import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findAllByRequestedByIdOrderById(Long requestedById);
 
     Optional<Booking> findByIdAndRequestedById(Long id, Long requestedById);
+
+    List<Booking> findAllByStatusOrderById(BookingStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

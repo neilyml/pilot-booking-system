@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
+import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
+import com.aiimglobal.pilot.booking.system.booking.dto.AdminBookingResponse;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.PaymentSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.RouteSummary;
@@ -76,9 +79,50 @@ public class BookingService {
                         "BOOKING_NOT_FOUND", "Booking was not found."));
     }
 
+    @Transactional(readOnly = true)
+    public List<AdminBookingResponse> listForReview(BookingStatus status) {
+        return bookingRepository.findAllByStatusOrderById(status).stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    @Transactional
+    public AdminBookingResponse approve(String reviewerEmail, Long bookingId) {
+        var booking = bookingForReview(bookingId);
+        booking.approve(reviewer(reviewerEmail));
+        return saveReviewed(booking);
+    }
+
+    @Transactional
+    public AdminBookingResponse reject(String reviewerEmail, Long bookingId, String reason) {
+        var booking = bookingForReview(bookingId);
+        booking.reject(reviewer(reviewerEmail), reason);
+        return saveReviewed(booking);
+    }
+
     private User requester(String requesterEmail) {
         return userRepository.findByEmail(requesterEmail)
                 .orElseThrow(() -> new IllegalStateException("Authenticated requester does not exist."));
+    }
+
+    private User reviewer(String reviewerEmail) {
+        return userRepository.findByEmail(reviewerEmail)
+                .orElseThrow(() -> new IllegalStateException("Authenticated reviewer does not exist."));
+    }
+
+    private Booking bookingForReview(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "BOOKING_NOT_FOUND", "Booking was not found."));
+    }
+
+    private AdminBookingResponse saveReviewed(Booking booking) {
+        try {
+            return toAdminResponse(bookingRepository.saveAndFlush(booking));
+        } catch (OptimisticLockingFailureException exception) {
+            throw new ResourceConflictException(
+                    "BOOKING_REVIEW_CONFLICT", "The booking was reviewed concurrently.");
+        }
     }
 
     private static String bookingNumber() {
@@ -116,6 +160,48 @@ public class BookingService {
                                 value.getPaidAt()))
                         .orElse(null),
                 null,
+                booking.getCreatedAt(),
+                booking.getUpdatedAt(),
+                booking.getCompletedAt());
+    }
+
+    private AdminBookingResponse toAdminResponse(Booking booking) {
+        var vessel = booking.getVessel();
+        var route = booking.getRoute();
+        var reviewer = booking.getReviewedBy();
+        var payment = paymentRepository.findByBookingIdAndStatus(
+                booking.getId(), PaymentStatus.SUCCESS);
+        return new AdminBookingResponse(
+                booking.getId(),
+                booking.getBookingNumber(),
+                booking.getRequestedBy().getId(),
+                booking.getRequestedBy().getEmail(),
+                booking.getServiceDate(),
+                booking.getServiceFee(),
+                booking.getStatus(),
+                new VesselSummary(
+                        vessel.getId(),
+                        vessel.getName(),
+                        vessel.getRegistrationNumber(),
+                        vessel.getVesselType(),
+                        vessel.getStatus()),
+                new RouteSummary(
+                        route.getId(),
+                        route.getCode(),
+                        route.getName(),
+                        route.getOrigin(),
+                        route.getDestination()),
+                payment.map(value -> new PaymentSummary(
+                                value.getId(),
+                                value.getStatus().name(),
+                                value.getAmount(),
+                                value.getPaidAt()))
+                        .orElse(null),
+                null,
+                reviewer == null ? null : reviewer.getId(),
+                reviewer == null ? null : reviewer.getEmail(),
+                booking.getReviewedAt(),
+                booking.getRejectionReason(),
                 booking.getCreatedAt(),
                 booking.getUpdatedAt(),
                 booking.getCompletedAt());

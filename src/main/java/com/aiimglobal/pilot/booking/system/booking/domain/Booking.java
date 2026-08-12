@@ -118,6 +118,29 @@ public class Booking {
         status = BookingStatus.PENDING_APPROVAL;
     }
 
+    public void approve(User reviewer) {
+        review(reviewer, BookingStatus.APPROVED, null);
+    }
+
+    public void reject(User reviewer, String reason) {
+        review(reviewer, BookingStatus.REJECTED, reason.trim());
+    }
+
+    private void review(User reviewer, BookingStatus decision, String reason) {
+        if (status == BookingStatus.PENDING_PAYMENT) {
+            throw new ResourceConflictException(
+                    "BOOKING_NOT_PENDING_APPROVAL", "The booking has not been paid.");
+        }
+        if (status != BookingStatus.PENDING_APPROVAL) {
+            throw new ResourceConflictException(
+                    "BOOKING_ALREADY_REVIEWED", "The booking already has a final review decision.");
+        }
+        status = decision;
+        reviewedBy = reviewer;
+        reviewedAt = Instant.now();
+        rejectionReason = reason;
+    }
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
