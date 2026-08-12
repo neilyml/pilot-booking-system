@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/vessels", "/api/v1/vessels/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/routes", "/api/v1/routes/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/coupons", "/api/v1/coupons/**").hasRole("OWNER")
+                        .requestMatchers("/api/v1/bookings", "/api/v1/bookings/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
