@@ -141,6 +141,14 @@ public class Booking {
         rejectionReason = reason;
     }
 
+    public void markAssigned() {
+        if (status != BookingStatus.APPROVED) {
+            throw new ResourceConflictException(
+                    "BOOKING_NOT_APPROVED", "Only an approved booking can receive a pilot.");
+        }
+        status = BookingStatus.ASSIGNED;
+    }
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();

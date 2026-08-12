@@ -7,9 +7,12 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.assignment.domain.AssignmentStatus;
+import com.aiimglobal.pilot.booking.system.assignment.persistence.BookingAssignmentRepository;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.exception.ResourceNotFoundException;
 import com.aiimglobal.pilot.booking.system.pilot.domain.Pilot;
+import com.aiimglobal.pilot.booking.system.pilot.domain.PilotStatus;
 import com.aiimglobal.pilot.booking.system.pilot.dto.CreatePilotRequest;
 import com.aiimglobal.pilot.booking.system.pilot.dto.PilotResponse;
 import com.aiimglobal.pilot.booking.system.pilot.dto.UpdatePilotRequest;
@@ -22,10 +25,19 @@ import lombok.RequiredArgsConstructor;
 public class PilotService {
 
     private final PilotRepository pilotRepository;
+    private final BookingAssignmentRepository assignmentRepository;
 
     @Transactional(readOnly = true)
     public List<PilotResponse> list() {
         return pilotRepository.findAllByOrderById().stream()
+                .map(PilotService::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PilotResponse> available(java.time.LocalDate serviceDate) {
+        return pilotRepository.findAvailable(
+                        serviceDate, PilotStatus.ACTIVE, AssignmentStatus.ACTIVE).stream()
                 .map(PilotService::toResponse)
                 .toList();
     }
@@ -61,7 +73,13 @@ public class PilotService {
 
     @Transactional
     public PilotResponse deactivate(Long pilotId) {
-        Pilot pilot = pilot(pilotId);
+        Pilot pilot = pilotRepository.findForUpdateById(pilotId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "PILOT_NOT_FOUND", "Pilot was not found."));
+        if (assignmentRepository.existsByPilotIdAndStatus(pilotId, AssignmentStatus.ACTIVE)) {
+            throw new ResourceConflictException(
+                    "PILOT_HAS_ACTIVE_ASSIGNMENT", "A pilot with active work cannot be deactivated.");
+        }
         pilot.deactivate();
         return toResponse(pilotRepository.saveAndFlush(pilot));
     }

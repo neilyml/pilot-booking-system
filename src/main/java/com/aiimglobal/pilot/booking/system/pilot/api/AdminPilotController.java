@@ -1,6 +1,7 @@
 package com.aiimglobal.pilot.booking.system.pilot.api;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aiimglobal.pilot.booking.system.pilot.application.PilotService;
@@ -31,6 +33,11 @@ public class AdminPilotController {
     @GetMapping
     List<PilotResponse> list() {
         return pilotService.list();
+    }
+
+    @GetMapping("/available")
+    List<PilotResponse> available(@RequestParam LocalDate serviceDate) {
+        return pilotService.available(serviceDate);
     }
 
     @PostMapping

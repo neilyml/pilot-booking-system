@@ -8,10 +8,13 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.assignment.domain.AssignmentStatus;
+import com.aiimglobal.pilot.booking.system.assignment.persistence.BookingAssignmentRepository;
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
 import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
 import com.aiimglobal.pilot.booking.system.booking.dto.AdminBookingResponse;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse;
+import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.AssignmentSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.PaymentSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.RouteSummary;
 import com.aiimglobal.pilot.booking.system.booking.dto.BookingResponse.VesselSummary;
@@ -38,6 +41,7 @@ public class BookingService {
     private final VesselRepository vesselRepository;
     private final RouteRepository routeRepository;
     private final PaymentRepository paymentRepository;
+    private final BookingAssignmentRepository assignmentRepository;
 
     @Transactional
     public BookingResponse create(String requesterEmail, CreateBookingRequest request) {
@@ -134,6 +138,8 @@ public class BookingService {
         var route = booking.getRoute();
         var payment = paymentRepository.findByBookingIdAndStatus(
                 booking.getId(), PaymentStatus.SUCCESS);
+        var assignment = assignmentRepository.findByBookingIdAndStatus(
+                booking.getId(), AssignmentStatus.ACTIVE);
         return new BookingResponse(
                 booking.getId(),
                 booking.getBookingNumber(),
@@ -159,7 +165,12 @@ public class BookingService {
                                 value.getAmount(),
                                 value.getPaidAt()))
                         .orElse(null),
-                null,
+                assignment.map(value -> new AssignmentSummary(
+                                value.getId(),
+                                value.getStatus().name(),
+                                value.getPilot().getId(),
+                                value.getPilot().getName()))
+                        .orElse(null),
                 booking.getCreatedAt(),
                 booking.getUpdatedAt(),
                 booking.getCompletedAt());
@@ -171,6 +182,8 @@ public class BookingService {
         var reviewer = booking.getReviewedBy();
         var payment = paymentRepository.findByBookingIdAndStatus(
                 booking.getId(), PaymentStatus.SUCCESS);
+        var assignment = assignmentRepository.findByBookingIdAndStatus(
+                booking.getId(), AssignmentStatus.ACTIVE);
         return new AdminBookingResponse(
                 booking.getId(),
                 booking.getBookingNumber(),
@@ -197,7 +210,12 @@ public class BookingService {
                                 value.getAmount(),
                                 value.getPaidAt()))
                         .orElse(null),
-                null,
+                assignment.map(value -> new AssignmentSummary(
+                                value.getId(),
+                                value.getStatus().name(),
+                                value.getPilot().getId(),
+                                value.getPilot().getName()))
+                        .orElse(null),
                 reviewer == null ? null : reviewer.getId(),
                 reviewer == null ? null : reviewer.getEmail(),
                 booking.getReviewedAt(),
