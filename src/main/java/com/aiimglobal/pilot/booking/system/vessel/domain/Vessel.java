@@ -17,6 +17,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.user.domain.User;
 
 import lombok.AccessLevel;
@@ -80,6 +81,25 @@ public class Vessel {
 
     public static Vessel register(User owner, String name, String registrationNumber, String vesselType) {
         return new Vessel(owner, name, registrationNumber, vesselType);
+    }
+
+    public void approve(User reviewer) {
+        review(reviewer, VesselStatus.APPROVED, null);
+    }
+
+    public void reject(User reviewer, String reason) {
+        review(reviewer, VesselStatus.REJECTED, reason.trim());
+    }
+
+    private void review(User reviewer, VesselStatus decision, String reason) {
+        if (status != VesselStatus.PENDING) {
+            throw new ResourceConflictException(
+                    "VESSEL_ALREADY_REVIEWED", "The vessel registration already has a final decision.");
+        }
+        status = decision;
+        reviewedBy = reviewer;
+        reviewedAt = Instant.now();
+        rejectionReason = reason;
     }
 
     @PrePersist
