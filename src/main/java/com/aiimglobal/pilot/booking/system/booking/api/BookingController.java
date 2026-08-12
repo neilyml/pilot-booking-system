@@ -4,6 +4,9 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -27,11 +30,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/bookings")
 @RequiredArgsConstructor
+@Tag(name = "Owner bookings", description = "Create and track bookings owned by the authenticated owner.")
 public class BookingController {
 
     private final BookingService bookingService;
 
     @PostMapping
+    @Operation(summary = "Create a booking")
     ResponseEntity<BookingResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CreateBookingRequest request) {
@@ -40,6 +45,7 @@ public class BookingController {
     }
 
     @GetMapping
+    @Operation(summary = "List the owner's bookings")
     PageResponse<BookingResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) BookingStatus status,
@@ -50,6 +56,7 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get an owned booking")
     BookingResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return bookingService.get(jwt.getSubject(), id);
     }

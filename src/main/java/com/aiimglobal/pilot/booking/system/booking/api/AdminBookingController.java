@@ -4,6 +4,9 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,12 +33,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/admin/bookings")
 @RequiredArgsConstructor
+@Tag(name = "Admin bookings", description = "Review bookings and manage pilot assignments.")
 public class AdminBookingController {
 
     private final BookingService bookingService;
     private final AssignmentService assignmentService;
 
     @GetMapping
+    @Operation(summary = "List bookings for review")
     PageResponse<AdminBookingResponse> list(
             @RequestParam(defaultValue = "PENDING_APPROVAL") BookingStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -44,11 +49,13 @@ public class AdminBookingController {
     }
 
     @PostMapping("/{id}/approve")
+    @Operation(summary = "Approve a booking")
     AdminBookingResponse approve(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return bookingService.approve(jwt.getSubject(), id);
     }
 
     @PostMapping("/{id}/reject")
+    @Operation(summary = "Reject a booking")
     AdminBookingResponse reject(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -57,6 +64,7 @@ public class AdminBookingController {
     }
 
     @PostMapping("/{id}/assign-pilot")
+    @Operation(summary = "Assign a pilot to a booking")
     ResponseEntity<AssignmentResponse> assignPilot(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -68,6 +76,7 @@ public class AdminBookingController {
     }
 
     @PostMapping("/{id}/complete")
+    @Operation(summary = "Complete an assigned booking")
     AssignmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return assignmentService.complete(jwt.getSubject(), id);
     }

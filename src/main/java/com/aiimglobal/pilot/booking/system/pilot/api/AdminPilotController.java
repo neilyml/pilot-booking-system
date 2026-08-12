@@ -5,6 +5,9 @@ import java.time.LocalDate;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,11 +33,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/admin/pilots")
 @RequiredArgsConstructor
+@Tag(name = "Admin pilots", description = "Manage pilots and find availability for assignments.")
 public class AdminPilotController {
 
     private final PilotService pilotService;
 
     @GetMapping
+    @Operation(summary = "List pilots")
     PageResponse<PilotResponse> list(
             @RequestParam(required = false) PilotStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -43,6 +48,7 @@ public class AdminPilotController {
     }
 
     @GetMapping("/available")
+    @Operation(summary = "List pilots available on a service date")
     PageResponse<PilotResponse> available(
             @RequestParam LocalDate serviceDate,
             @RequestParam(defaultValue = "0") int page,
@@ -51,6 +57,7 @@ public class AdminPilotController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a pilot")
     ResponseEntity<PilotResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CreatePilotRequest request) {
@@ -59,6 +66,7 @@ public class AdminPilotController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a pilot")
     PilotResponse update(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -67,6 +75,7 @@ public class AdminPilotController {
     }
 
     @PostMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate a pilot")
     PilotResponse deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return pilotService.deactivate(jwt.getSubject(), id);
     }

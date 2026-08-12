@@ -4,6 +4,9 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,11 +24,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/admin/coupons")
 @RequiredArgsConstructor
+@Tag(name = "Admin coupons", description = "Issue payment coupons to vessel owners.")
 public class AdminCouponController {
 
     private final CouponService couponService;
 
     @PostMapping
+    @Operation(summary = "Issue a coupon")
     ResponseEntity<CouponResponse> issue(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody IssueCouponRequest request) {

@@ -4,6 +4,10 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,16 +25,20 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Owner registration and access-token issuance.")
+@SecurityRequirements
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/login")
+    @Operation(summary = "Log in")
     ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Register an owner")
     ResponseEntity<RegisterOwnerResponse> registerOwner(@Valid @RequestBody RegisterOwnerRequest request) {
         RegisterOwnerResponse response = authService.registerOwner(request);
         return ResponseEntity.created(URI.create("/api/v1/auth/register/" + response.id())).body(response);

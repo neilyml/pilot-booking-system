@@ -2,6 +2,9 @@ package com.aiimglobal.pilot.booking.system.report.api;
 
 import java.time.LocalDate;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,11 +21,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/admin/reports/bookings")
 @RequiredArgsConstructor
+@Tag(name = "Admin reports", description = "Read-only, filterable booking reports.")
 public class AdminBookingReportController {
 
     private final BookingReportService bookingReportService;
 
     @GetMapping
+    @Operation(summary = "Get the booking report")
     PageResponse<BookingReportRow> report(
             @RequestParam(required = false) BookingStatus status,
             @RequestParam(name = "from", required = false) LocalDate fromDate,

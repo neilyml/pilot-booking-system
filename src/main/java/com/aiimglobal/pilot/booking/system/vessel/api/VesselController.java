@@ -4,6 +4,9 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -27,11 +30,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/vessels")
 @RequiredArgsConstructor
+@Tag(name = "Owner vessels", description = "Register and track vessels owned by the authenticated owner.")
 public class VesselController {
 
     private final VesselService vesselService;
 
     @PostMapping
+    @Operation(summary = "Register a vessel")
     ResponseEntity<VesselResponse> register(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody RegisterVesselRequest request) {
@@ -40,6 +45,7 @@ public class VesselController {
     }
 
     @GetMapping
+    @Operation(summary = "List the owner's vessels")
     PageResponse<VesselResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) VesselStatus status,
@@ -49,6 +55,7 @@ public class VesselController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get an owned vessel")
     VesselResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return vesselService.get(jwt.getSubject(), id);
     }

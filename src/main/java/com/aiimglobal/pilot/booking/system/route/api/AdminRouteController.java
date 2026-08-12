@@ -4,6 +4,9 @@ import java.net.URI;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,11 +26,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/admin/routes")
 @RequiredArgsConstructor
+@Tag(name = "Admin routes", description = "Create, update, and control service routes.")
 public class AdminRouteController {
 
     private final RouteService routeService;
 
     @PostMapping
+    @Operation(summary = "Create a route")
     ResponseEntity<RouteResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody RouteRequest request) {
@@ -36,6 +41,7 @@ public class AdminRouteController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a route")
     RouteResponse update(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -44,11 +50,13 @@ public class AdminRouteController {
     }
 
     @PostMapping("/{id}/activate")
+    @Operation(summary = "Activate a route")
     RouteResponse activate(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return routeService.activate(jwt.getSubject(), id);
     }
 
     @PostMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate a route")
     RouteResponse deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return routeService.deactivate(jwt.getSubject(), id);
     }

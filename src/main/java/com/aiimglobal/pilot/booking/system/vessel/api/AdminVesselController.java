@@ -1,5 +1,8 @@
 package com.aiimglobal.pilot.booking.system.vessel.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.aiimglobal.pilot.booking.system.vessel.application.VesselService;
 import com.aiimglobal.pilot.booking.system.api.PageRequests;
 import com.aiimglobal.pilot.booking.system.api.PageResponse;
@@ -21,11 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/vessels")
 @RequiredArgsConstructor
+@Tag(name = "Admin vessels", description = "Review owner vessel registrations.")
 public class AdminVesselController {
 
     private final VesselService vesselService;
 
     @GetMapping
+    @Operation(summary = "List vessels for review")
     PageResponse<AdminVesselResponse> list(
             @RequestParam(defaultValue = "PENDING") VesselStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -34,11 +39,13 @@ public class AdminVesselController {
     }
 
     @PostMapping("/{id}/approve")
+    @Operation(summary = "Approve a vessel")
     AdminVesselResponse approve(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return vesselService.approve(jwt.getSubject(), id);
     }
 
     @PostMapping("/{id}/reject")
+    @Operation(summary = "Reject a vessel")
     AdminVesselResponse reject(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
