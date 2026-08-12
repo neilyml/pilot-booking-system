@@ -4,12 +4,18 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiimglobal.pilot.booking.system.auth.dto.AuthResponse;
+import com.aiimglobal.pilot.booking.system.auth.dto.LoginRequest;
 import com.aiimglobal.pilot.booking.system.auth.dto.RegisterOwnerRequest;
 import com.aiimglobal.pilot.booking.system.auth.dto.RegisterOwnerResponse;
+import com.aiimglobal.pilot.booking.system.exception.InvalidCredentialsException;
 import com.aiimglobal.pilot.booking.system.exception.MissingReferenceDataException;
 import com.aiimglobal.pilot.booking.system.exception.ResourceConflictException;
 import com.aiimglobal.pilot.booking.system.user.domain.Role;
@@ -27,6 +33,19 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenService jwtTokenService;
+
+    public AuthResponse login(LoginRequest request) {
+        String email = request.email().toLowerCase(Locale.ROOT);
+        try {
+            var authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(email, request.password()));
+            return jwtTokenService.issue(authentication);
+        } catch (AuthenticationException exception) {
+            throw new InvalidCredentialsException();
+        }
+    }
 
     @Transactional
     public RegisterOwnerResponse registerOwner(RegisterOwnerRequest request) {
@@ -34,7 +53,7 @@ public class AuthService {
         String phone = request.phone();
         rejectDuplicates(email, phone);
 
-        User user = User.registerOwner(
+        User user = User.createActive(
                 email,
                 phone,
                 passwordEncoder.encode(request.password()),

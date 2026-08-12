@@ -75,7 +75,7 @@ public class User {
         this.status = UserStatus.ACTIVE;
     }
 
-    public static User registerOwner(String email, String phone, String passwordHash, String fullName) {
+    public static User createActive(String email, String phone, String passwordHash, String fullName) {
         return new User(email, phone, passwordHash, fullName);
     }
 

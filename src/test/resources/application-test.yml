@@ -6,3 +6,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+application:
+  security:
+    jwt:
+      issuer: https://pilot-booking-system.local
+      access-token-ttl: PT15M
+      secret: 788PZKPrYkuFNoPmwZecct3KZhj25y90TW6n7OLBQLU=

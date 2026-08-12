@@ -1,3 +1,10 @@
 spring:
   application:
     name: 'pilot-booking-system'
+
+application:
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:https://pilot-booking-system.local}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT15M}
+      secret: ${JWT_SECRET:}
