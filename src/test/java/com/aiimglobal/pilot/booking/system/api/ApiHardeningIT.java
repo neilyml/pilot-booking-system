@@ -20,16 +20,11 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 @ExtendWith(OutputCaptureExtension.class)
 class ApiHardeningIT extends IntegrationTestBase {
 
     private static final String ADMIN_PASSWORD = "admin-password";
     private static final String OWNER_PASSWORD = "owner-password-not-for-logs";
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -232,12 +227,6 @@ class ApiHardeningIT extends IntegrationTestBase {
                 values (?, ?, ?, 'Container Ship', ?, ?, ?, 0)
                 """, ownerId, "MV " + suffix, "REG-" + suffix, status,
                 Timestamp.from(createdAt), Timestamp.from(createdAt));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] body) throws Exception {
-        assertThat(body).isNotNull();
-        return objectMapper.readValue(new String(body, StandardCharsets.UTF_8), Map.class);
     }
 
     private record Principal(Long id, String token) {

@@ -3,7 +3,6 @@ package com.aiimglobal.pilot.booking.system.vessel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -18,15 +17,10 @@ import org.springframework.test.web.servlet.client.EntityExchangeResult;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 class AdminVesselReviewIT extends IntegrationTestBase {
 
     private static final String OWNER_PASSWORD = "owner-password";
     private static final String ADMIN_PASSWORD = "admin-password";
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -281,11 +275,5 @@ class AdminVesselReviewIT extends IntegrationTestBase {
 
     private Map<String, Object> vesselRow(Long vesselId) {
         return jdbcTemplate.queryForMap("select * from vessels where id = ?", vesselId);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] responseBody) throws Exception {
-        assertThat(responseBody).isNotNull();
-        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
     }
 }

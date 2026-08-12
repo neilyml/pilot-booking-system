@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/vessels")
 @RequiredArgsConstructor
 @Tag(name = "Owner vessels", description = "Register and track vessels owned by the authenticated owner.")
+@PreAuthorize("hasRole('OWNER')")
 public class VesselController {
 
     private final VesselService vesselService;

@@ -1,5 +1,10 @@
 package com.aiimglobal.pilot.booking.system.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +16,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import tools.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
 @Import(PostgresTestConfiguration.class)
@@ -30,6 +37,9 @@ public abstract class IntegrationTestBase {
     protected JdbcTemplate jdbcTemplate;
 
     @Autowired
+    protected ObjectMapper objectMapper;
+
+    @Autowired
     protected PostgreSQLContainer postgresContainer;
 
     protected RestTestClient restTestClient;
@@ -40,5 +50,11 @@ public abstract class IntegrationTestBase {
         restTestClient = RestTestClient.bindToServer()
                 .baseUrl("http://localhost:" + port)
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> json(byte[] responseBody) throws Exception {
+        assertThat(responseBody).isNotNull();
+        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
     }
 }

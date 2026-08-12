@@ -4,6 +4,14 @@ spring:
 
 application:
   security:
+    public-endpoints:
+      - method: POST
+        pattern: /api/v1/auth/register
+      - method: POST
+        pattern: /api/v1/auth/login
+      - pattern: /v3/api-docs/**
+      - pattern: /swagger-ui/**
+      - pattern: /swagger-ui.html
     jwt:
       issuer: ${JWT_ISSUER:https://pilot-booking-system.local}
       access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT15M}

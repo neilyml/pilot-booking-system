@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -16,16 +15,11 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 class RouteManagementIT extends IntegrationTestBase {
 
     private static final String ADMIN_PASSWORD = "admin-password";
     private static final String OWNER_PASSWORD = "owner-password";
     private static final String ADMIN_ROUTES_PATH = "/api/v1/admin/routes";
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -281,11 +275,5 @@ class RouteManagementIT extends IntegrationTestBase {
                 "origin", "Outer Anchorage",
                 "destination", "Main Port",
                 "serviceFee", serviceFee);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] responseBody) throws Exception {
-        assertThat(responseBody).isNotNull();
-        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
     }
 }

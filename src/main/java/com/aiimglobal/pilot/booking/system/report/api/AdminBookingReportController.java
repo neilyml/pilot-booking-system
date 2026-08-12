@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/admin/reports/bookings")
 @RequiredArgsConstructor
 @Tag(name = "Admin reports", description = "Read-only, filterable booking reports.")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingReportController {
 
     private final BookingReportService bookingReportService;

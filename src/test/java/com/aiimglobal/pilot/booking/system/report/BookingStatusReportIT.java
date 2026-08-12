@@ -3,7 +3,6 @@ package com.aiimglobal.pilot.booking.system.report;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,15 +15,10 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 class BookingStatusReportIT extends IntegrationTestBase {
 
     private static final String ADMIN_PASSWORD = "admin-password";
     private static final String OWNER_PASSWORD = "owner-password";
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -473,12 +467,6 @@ class BookingStatusReportIT extends IntegrationTestBase {
                     (booking_id, pilot_id, service_date, assigned_by, status, assigned_at)
                 values (?, ?, ?, ?, 'ACTIVE', now())
                 """, bookingId, pilotId, serviceDate, adminId);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] body) throws Exception {
-        assertThat(body).isNotNull();
-        return objectMapper.readValue(new String(body, StandardCharsets.UTF_8), Map.class);
     }
 
     private record Principal(Long id, String token) {

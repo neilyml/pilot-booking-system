@@ -11,6 +11,7 @@ import com.aiimglobal.pilot.booking.system.vessel.dto.AdminVesselResponse;
 import com.aiimglobal.pilot.booking.system.vessel.dto.RejectVesselRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin/vessels")
 @RequiredArgsConstructor
 @Tag(name = "Admin vessels", description = "Review owner vessel registrations.")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminVesselController {
 
     private final VesselService vesselService;

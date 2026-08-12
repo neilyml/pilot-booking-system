@@ -3,7 +3,6 @@ package com.aiimglobal.pilot.booking.system.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -12,12 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 class CurrentUserProfileIT extends IntegrationTestBase {
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -104,11 +98,5 @@ class CurrentUserProfileIT extends IntegrationTestBase {
                 .returnResult()
                 .getResponseBody();
         return json(responseBody).get("accessToken").toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] responseBody) throws Exception {
-        assertThat(responseBody).isNotNull();
-        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
     }
 }

@@ -3,7 +3,6 @@ package com.aiimglobal.pilot.booking.system.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +12,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -26,8 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 @Import(UserAuthenticationIT.SecurityProbeController.class)
 class UserAuthenticationIT extends IntegrationTestBase {
 
@@ -38,9 +36,6 @@ class UserAuthenticationIT extends IntegrationTestBase {
 
     @Autowired
     private JwtEncoder jwtEncoder;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -79,7 +74,7 @@ class UserAuthenticationIT extends IntegrationTestBase {
 
         assertThat(jwtDecoder.decode(token).getClaimAsStringList("roles")).containsExactly("ADMIN");
         restTestClient.get()
-                .uri("/api/v1/admin/test")
+                .uri("/api/v1/test/admin-method")
                 .headers(headers -> headers.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isOk();
@@ -160,7 +155,7 @@ class UserAuthenticationIT extends IntegrationTestBase {
                 .returnResult().getResponseBody());
 
         restTestClient.get()
-                .uri("/api/v1/admin/test")
+                .uri("/api/v1/test/admin-method")
                 .headers(headers -> headers.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isForbidden()
@@ -240,12 +235,6 @@ class UserAuthenticationIT extends IntegrationTestBase {
         return json(responseBody).get("accessToken").toString();
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] responseBody) throws Exception {
-        assertThat(responseBody).isNotNull();
-        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
-    }
-
     @RestController
     static class SecurityProbeController {
 
@@ -254,7 +243,8 @@ class UserAuthenticationIT extends IntegrationTestBase {
             return Map.of("authenticated", true);
         }
 
-        @GetMapping("/api/v1/admin/test")
+        @GetMapping("/api/v1/test/admin-method")
+        @PreAuthorize("hasRole('ADMIN')")
         Map<String, Boolean> adminEndpoint() {
             return Map.of("admin", true);
         }

@@ -3,7 +3,6 @@ package com.aiimglobal.pilot.booking.system.coupon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 
@@ -14,16 +13,11 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import com.aiimglobal.pilot.booking.system.support.IntegrationTestBase;
 import com.aiimglobal.pilot.booking.system.support.TestDataFactory;
 
-import tools.jackson.databind.ObjectMapper;
-
 class CouponManagementIT extends IntegrationTestBase {
 
     private static final String ADMIN_PASSWORD = "admin-password";
     private static final String OWNER_PASSWORD = "owner-password";
     private static final String ADMIN_COUPONS_PATH = "/api/v1/admin/coupons";
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataFactory testDataFactory;
@@ -228,12 +222,6 @@ class CouponManagementIT extends IntegrationTestBase {
                 "ownerId", ownerId,
                 "amount", amount,
                 "expiresAt", Instant.now().plusSeconds(86_400).toString());
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> json(byte[] responseBody) throws Exception {
-        assertThat(responseBody).isNotNull();
-        return objectMapper.readValue(new String(responseBody, StandardCharsets.UTF_8), Map.class);
     }
 
     private record Owner(Long id, String token) {

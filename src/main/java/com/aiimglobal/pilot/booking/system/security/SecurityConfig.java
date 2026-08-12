@@ -1,12 +1,13 @@
 package com.aiimglobal.pilot.booking.system.security;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,6 +18,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@EnableMethodSecurity
+@EnableConfigurationProperties(EndpointSecurityProperties.class)
 public class SecurityConfig {
 
     @Bean
@@ -47,20 +50,21 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter,
-            SecurityErrorWriter errorWriter) throws Exception {
+            SecurityErrorWriter errorWriter,
+            EndpointSecurityProperties securityProperties) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/vessels", "/api/v1/vessels/**").hasRole("OWNER")
-                        .requestMatchers("/api/v1/routes", "/api/v1/routes/**").hasRole("OWNER")
-                        .requestMatchers("/api/v1/coupons", "/api/v1/coupons/**").hasRole("OWNER")
-                        .requestMatchers("/api/v1/bookings", "/api/v1/bookings/**").hasRole("OWNER")
-                        .requestMatchers("/api/v1/dashboard").hasRole("OWNER")
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(authorize -> {
+                    for (var endpoint : securityProperties.publicEndpoints()) {
+                        if (endpoint.method() == null) {
+                            authorize.requestMatchers(endpoint.pattern()).permitAll();
+                        } else {
+                            authorize.requestMatchers(endpoint.method(), endpoint.pattern()).permitAll();
+                        }
+                    }
+                    authorize.anyRequest().authenticated();
+                })
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, exception) -> errorWriter.write(
                                 request, response, HttpStatus.UNAUTHORIZED.value(),

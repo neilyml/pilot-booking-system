@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/admin/bookings")
 @RequiredArgsConstructor
 @Tag(name = "Admin bookings", description = "Review bookings and manage pilot assignments.")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingController {
 
     private final BookingService bookingService;
