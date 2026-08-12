@@ -1,0 +1,8 @@
+spring:
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/test-migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
