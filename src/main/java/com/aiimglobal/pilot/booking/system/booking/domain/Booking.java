@@ -149,6 +149,15 @@ public class Booking {
         status = BookingStatus.ASSIGNED;
     }
 
+    public void complete(Instant completionTime) {
+        if (status != BookingStatus.ASSIGNED) {
+            throw new ResourceConflictException(
+                    "BOOKING_NOT_ASSIGNED", "Only an assigned booking can be completed.");
+        }
+        status = BookingStatus.COMPLETED;
+        completedAt = completionTime;
+    }
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();

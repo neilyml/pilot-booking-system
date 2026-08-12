@@ -8,7 +8,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aiimglobal.pilot.booking.system.assignment.domain.AssignmentStatus;
 import com.aiimglobal.pilot.booking.system.assignment.persistence.BookingAssignmentRepository;
 import com.aiimglobal.pilot.booking.system.booking.domain.Booking;
 import com.aiimglobal.pilot.booking.system.booking.domain.BookingStatus;
@@ -138,8 +137,7 @@ public class BookingService {
         var route = booking.getRoute();
         var payment = paymentRepository.findByBookingIdAndStatus(
                 booking.getId(), PaymentStatus.SUCCESS);
-        var assignment = assignmentRepository.findByBookingIdAndStatus(
-                booking.getId(), AssignmentStatus.ACTIVE);
+        var assignment = assignmentRepository.findFirstByBookingIdOrderByIdDesc(booking.getId());
         return new BookingResponse(
                 booking.getId(),
                 booking.getBookingNumber(),
@@ -182,8 +180,7 @@ public class BookingService {
         var reviewer = booking.getReviewedBy();
         var payment = paymentRepository.findByBookingIdAndStatus(
                 booking.getId(), PaymentStatus.SUCCESS);
-        var assignment = assignmentRepository.findByBookingIdAndStatus(
-                booking.getId(), AssignmentStatus.ACTIVE);
+        var assignment = assignmentRepository.findFirstByBookingIdOrderByIdDesc(booking.getId());
         return new AdminBookingResponse(
                 booking.getId(),
                 booking.getBookingNumber(),

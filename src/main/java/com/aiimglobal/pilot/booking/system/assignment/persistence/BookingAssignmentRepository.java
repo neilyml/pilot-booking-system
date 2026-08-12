@@ -18,4 +18,6 @@ public interface BookingAssignmentRepository extends JpaRepository<BookingAssign
     boolean existsByPilotIdAndStatus(Long pilotId, AssignmentStatus status);
 
     Optional<BookingAssignment> findByBookingIdAndStatus(Long bookingId, AssignmentStatus status);
+
+    Optional<BookingAssignment> findFirstByBookingIdOrderByIdDesc(Long bookingId);
 }

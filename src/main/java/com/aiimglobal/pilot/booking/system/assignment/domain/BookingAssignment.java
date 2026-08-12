@@ -71,6 +71,14 @@ public class BookingAssignment {
         return new BookingAssignment(booking, pilot, assignedBy);
     }
 
+    public void complete(Instant completionTime) {
+        if (status != AssignmentStatus.ACTIVE) {
+            throw new IllegalStateException("Only an active assignment can be completed.");
+        }
+        status = AssignmentStatus.COMPLETED;
+        completedAt = completionTime;
+    }
+
     @PrePersist
     void onCreate() {
         assignedAt = Instant.now();

@@ -1,5 +1,7 @@
 package com.aiimglobal.pilot.booking.system.assignment.application;
 
+import java.time.Instant;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,33 @@ public class AssignmentService {
         } catch (DataIntegrityViolationException exception) {
             throw new ResourceConflictException(
                     "ASSIGNMENT_CONFLICT", "The booking or pilot was assigned concurrently.");
+        }
+    }
+
+    @Transactional
+    public AssignmentResponse complete(Long bookingId) {
+        var booking = bookingRepository.findForUpdateById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "BOOKING_NOT_FOUND", "Booking was not found."));
+        if (booking.getStatus() != BookingStatus.ASSIGNED) {
+            throw new ResourceConflictException(
+                    "BOOKING_NOT_ASSIGNED", "Only an assigned booking can be completed.");
+        }
+        var assignment = assignmentRepository.findByBookingIdAndStatus(
+                        bookingId, AssignmentStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceConflictException(
+                        "ACTIVE_ASSIGNMENT_NOT_FOUND",
+                        "The assigned booking has no matching active pilot assignment."));
+        Instant completionTime = Instant.now();
+        booking.complete(completionTime);
+        assignment.complete(completionTime);
+        try {
+            bookingRepository.saveAndFlush(booking);
+            assignmentRepository.saveAndFlush(assignment);
+            return toResponse(assignment);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResourceConflictException(
+                    "COMPLETION_CONFLICT", "The booking could not be completed atomically.");
         }
     }
 

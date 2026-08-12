@@ -63,4 +63,9 @@ public class AdminBookingController {
                         "/api/v1/admin/bookings/" + id + "/assignments/" + response.id()))
                 .body(response);
     }
+
+    @PostMapping("/{id}/complete")
+    AssignmentResponse complete(@PathVariable Long id) {
+        return assignmentService.complete(id);
+    }
 }
