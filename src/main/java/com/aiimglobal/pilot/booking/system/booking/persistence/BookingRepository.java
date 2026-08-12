@@ -21,6 +21,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findAllByStatusOrderById(BookingStatus status);
 
+    long countByRequestedByEmailAndStatus(String requestedByEmail, BookingStatus status);
+
+    long countByStatus(BookingStatus status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select booking from Booking booking

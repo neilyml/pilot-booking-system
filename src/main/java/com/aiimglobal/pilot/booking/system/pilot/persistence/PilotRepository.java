@@ -22,6 +22,8 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
 
     List<Pilot> findAllByOrderById();
 
+    long countByStatus(PilotStatus status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select pilot from Pilot pilot where pilot.id = :id")
     Optional<Pilot> findForUpdateById(@Param("id") Long id);

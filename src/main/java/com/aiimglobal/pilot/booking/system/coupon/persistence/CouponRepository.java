@@ -1,5 +1,7 @@
 package com.aiimglobal.pilot.booking.system.coupon.persistence;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,10 +13,29 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.aiimglobal.pilot.booking.system.coupon.domain.Coupon;
+import com.aiimglobal.pilot.booking.system.coupon.domain.CouponStatus;
 
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     List<Coupon> findAllByOwnerEmailOrderById(String ownerEmail);
+
+    long countByOwnerEmailAndStatus(String ownerEmail, CouponStatus status);
+
+    long countByStatus(CouponStatus status);
+
+    long countByOwnerEmailAndStatusAndExpiresAtAfter(
+            String ownerEmail, CouponStatus status, Instant currentTime);
+
+    @Query("""
+            select sum(coupon.amount) from Coupon coupon
+            where coupon.owner.email = :ownerEmail
+              and coupon.status = :status
+              and coupon.expiresAt > :currentTime
+            """)
+    BigDecimal sumAvailableValue(
+            @Param("ownerEmail") String ownerEmail,
+            @Param("status") CouponStatus status,
+            @Param("currentTime") Instant currentTime);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

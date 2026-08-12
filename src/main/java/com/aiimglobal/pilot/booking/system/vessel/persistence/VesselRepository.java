@@ -17,4 +17,8 @@ public interface VesselRepository extends JpaRepository<Vessel, Long> {
     Optional<Vessel> findByIdAndOwnerId(Long id, Long ownerId);
 
     List<Vessel> findAllByStatusOrderById(VesselStatus status);
+
+    long countByOwnerEmailAndStatus(String ownerEmail, VesselStatus status);
+
+    long countByStatus(VesselStatus status);
 }
