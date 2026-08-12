@@ -13,6 +13,8 @@ import com.aiimglobal.pilot.booking.system.user.persistence.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.springframework.security.core.userdetails.User.withUsername;
+
 @Service
 @RequiredArgsConstructor
 public class ApplicationUserDetailsService implements UserDetailsService {
@@ -29,7 +31,7 @@ public class ApplicationUserDetailsService implements UserDetailsService {
                 .map(role -> "ROLE_" + role.getName().name())
                 .sorted()
                 .toArray(String[]::new);
-        return org.springframework.security.core.userdetails.User.withUsername(user.getEmail())
+        return withUsername(user.getEmail())
                 .password(user.getPasswordHash())
                 .disabled(user.getStatus() == UserStatus.DISABLED)
                 .authorities(authorities)
