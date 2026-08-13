@@ -1,14 +1,18 @@
 spring:
   application:
     name: 'pilot-booking-system'
+  jpa:
+    open-in-view: false
 
 server:
   port: ${PORT:8080}
+  address: 0.0.0.0
 
 management:
   endpoints:
     web:
       exposure:
+
         include: health
   endpoint:
     health:
