@@ -1,32 +1,29 @@
-# Pilotage Booking & Coupon Payment Management System
+# Pilotage Booking System — Backend
 
-A Spring Boot REST API for vessel registration, pilotage booking, coupon payment, pilot assignment, operational reporting, and status tracking. The application uses PostgreSQL 18, Flyway migrations, Spring Data JPA, Spring Security, symmetric HMAC-signed JWTs, and Springdoc OpenAPI.
+Spring Boot REST API for vessel registration, route selection, booking, coupon payment, pilot assignment, status tracking, dashboards, and reports.
 
-## Documentation
-
-- [Business flow](docs/business-flow.md)
-- [API design](docs/api-design.md)
-- [Schema design and ERD](docs/schema-design.md)
-
-## Prerequisites
+## Requirements
 
 - Java 25
-- Docker with a running daemon
-- A POSIX-compatible shell
+- Docker
 
-The Maven wrapper is included, so a separate Maven installation is not required.
+The Maven wrapper is included; a separate Maven installation is not required.
 
-Verify the main tools:
+## Run the tests
+
+Start Docker, then run:
 
 ```bash
-java -version
-docker version
-./mvnw -version
+./mvnw clean verify
 ```
 
-## Start PostgreSQL 18
+The integration suite starts PostgreSQL 18 with Testcontainers, runs Flyway migrations, and exercises the application through its HTTP API. No local database configuration is needed.
 
-Create the local database container:
+## Run the application locally
+
+### 1. Start PostgreSQL 18
+
+Create the database container once:
 
 ```bash
 docker run --name pilot-db \
@@ -38,27 +35,24 @@ docker run --name pilot-db \
   -d postgres:18
 ```
 
-PostgreSQL 18 uses `/var/lib/postgresql` as the volume mount target for this image. Do not use the older `/var/lib/postgresql/data` path.
-
-For an existing container:
+On later runs:
 
 ```bash
 docker start pilot-db
-docker ps --filter name=pilot-db
 ```
 
-Flyway creates and validates the application schema automatically when the application starts. It does not create the PostgreSQL database itself.
+PostgreSQL 18 uses `/var/lib/postgresql` as the container volume path.
 
-## Configure the local profile
+### 2. Create the local profile
 
-`application-local.yml` is intentionally ignored by Git because it contains local environment configuration. Create `src/main/resources/application-local.yml`:
+Create `src/main/resources/application-local.yml`:
 
 ```yaml
 spring:
   datasource:
-    url: ${LOCAL_DB_URL:jdbc:postgresql://localhost:5432/pilot_booking_system}
-    username: ${LOCAL_DB_USERNAME}
-    password: ${LOCAL_DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/pilot_booking_system
+    username: pilot
+    password: pilot
   jpa:
     hibernate:
       ddl-auto: validate
@@ -66,66 +60,35 @@ spring:
 application:
   security:
     jwt:
-      issuer: ${JWT_ISSUER:http://localhost:8080}
-      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT15M}
+      issuer: http://localhost:8080
+      access-token-ttl: PT15M
       secret: ${JWT_SECRET}
 ```
 
-Generate a Base64-encoded 256-bit HMAC secret for local development:
+The file is ignored by Git. Generate a local Base64-encoded HMAC secret:
 
 ```bash
-openssl rand -base64 32
+export JWT_SECRET="$(openssl rand -base64 32)"
 ```
 
-Keep the generated value out of source control, logs, screenshots, and shared shell scripts.
-
-## Run the application
-
-Export the required local values and activate the profile:
+### 3. Start the backend
 
 ```bash
-export LOCAL_DB_USERNAME=pilot
-export LOCAL_DB_PASSWORD=pilot
-export JWT_SECRET='replace-with-your-base64-secret'
-
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-The local database URL, issuer, and token lifetime use the defaults shown above. Override them only when needed:
+Flyway creates or updates the schema automatically.
 
-```bash
-export LOCAL_DB_URL='jdbc:postgresql://localhost:5432/pilot_booking_system'
-export JWT_ISSUER='http://localhost:8080'
-export JWT_ACCESS_TOKEN_TTL='PT15M'
-```
-
-You may also pass Spring properties through the Maven CLI:
-
-```bash
-./mvnw spring-boot:run \
-  -Dspring-boot.run.profiles=local \
-  -Dspring-boot.run.arguments="\
---spring.datasource.username=pilot \
---spring.datasource.password=pilot \
---application.security.jwt.secret=replace-with-your-base64-secret"
-```
-
-Environment variables are preferable for secrets because command-line values may be visible in shell history and process listings.
-
-## API documentation
-
-After the application starts:
+### 4. Open the API
 
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 
-Use `POST /api/v1/auth/login` to obtain a JWT. In Swagger UI, click **Authorize** and paste only the token value into the bearer-token field.
+Register an OWNER with `POST /api/v1/auth/register`, then log in with `POST /api/v1/auth/login`. In Swagger UI, select **Authorize** and provide the returned access token.
 
-## Create a local administrator
+## Create a local ADMIN
 
-There is no administrator bootstrap in production code and no public administrator-registration endpoint. For local development, register an owner through the API so the password is encoded by the application, then replace its OWNER role with ADMIN in the local database.
-
-Register the account:
+There is no default ADMIN account. First register an account through the API so its password is encoded correctly:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
@@ -134,56 +97,63 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
     "fullName": "Local Administrator",
     "email": "admin@example.com",
     "phone": null,
-    "password": "replace-with-a-strong-password"
+    "password": "Choose-A-Strong-Password!"
   }'
 ```
 
-Assign only the ADMIN role:
+Replace that account's OWNER role with ADMIN in the local database:
 
 ```bash
 docker exec -i pilot-db \
-  psql -U pilot -d pilot_booking_system \
-  -c "delete from user_roles
+  psql -U pilot -d pilot_booking_system -v ON_ERROR_STOP=1 \
+  -c "begin;
+      delete from user_roles
       where user_id = (select id from users where email = 'admin@example.com');
+
       insert into user_roles (user_id, role_id)
       select u.id, r.id
       from users u
-      cross join roles r
-      where u.email = 'admin@example.com'
-        and r.name = 'ADMIN'
-      on conflict do nothing;"
+      join roles r on r.name = 'ADMIN'
+      where u.email = 'admin@example.com';
+      commit;"
 ```
 
-This operation changes only the specified local account. Log in after assigning the role because roles are embedded in the JWT when it is issued.
+Log in again to obtain a JWT containing the ADMIN role.
 
-## Run the test suite
+## Run the backend with Docker
 
-The integration tests use RestTestClient, Testcontainers, and a real PostgreSQL 18 container. Docker must be running.
+Build the image:
 
 ```bash
-./mvnw clean verify
+docker build -t pilot-booking-system-backend .
 ```
 
-The build runs Flyway migrations against the Testcontainers database and validates Hibernate mappings against the resulting schema.
+Create `.env.docker`:
 
-## Useful local commands
+```dotenv
+SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/pilot_booking_system
+SPRING_DATASOURCE_USERNAME=pilot
+SPRING_DATASOURCE_PASSWORD=pilot
+SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+JWT_ISSUER=http://localhost:8080
+JWT_ACCESS_TOKEN_TTL=PT15M
+JWT_SECRET=replace-with-output-from-openssl
+```
 
-Check the application process:
+Run the image:
 
 ```bash
-curl -i http://localhost:8080/v3/api-docs
+docker run --rm \
+  --name pilot-booking-backend \
+  --env-file .env.docker \
+  -p 8080:8080 \
+  pilot-booking-system-backend
 ```
 
-Open a PostgreSQL shell:
+On Linux, add `--add-host=host.docker.internal:host-gateway` to the command.
 
-```bash
-docker exec -it pilot-db psql -U pilot -d pilot_booking_system
-```
+## Project documentation
 
-Stop local services without deleting data:
-
-```bash
-docker stop pilot-db
-```
-
-The named volume `pilot-pgdata` preserves the PostgreSQL data when the container is stopped or removed.
+- [Business flow](docs/business-flow.md)
+- [API design](docs/api-design.md)
+- [Schema design and ERD](docs/schema-design.md)
